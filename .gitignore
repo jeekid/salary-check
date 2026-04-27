@@ -1,0 +1,11 @@
+~$*
+.DS_Store
+node_modules/
+.next/
+dist/
+web/assets/
+.env
+.env.local
+.claude/settings.local.json
+claude-esc/
+codex-esc/

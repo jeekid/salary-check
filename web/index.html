@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Salary Checker</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <p class="eyebrow">Local-first checker</p>
+        <h1>薪資驗算機</h1>
+        <p class="lede">
+          上傳排班 Excel，選擇人員，輸入薪資單數字。程式會依固定規則重算薪俸、其他加款與所得稅，直接標出差額。
+        </p>
+      </section>
+
+      <section class="panel">
+        <form id="checker-form" class="form">
+          <label>
+            <span>排班 Excel</span>
+            <input name="schedule" type="file" accept=".xlsx,.xls" required />
+          </label>
+
+          <label>
+            <span>人員姓名</span>
+            <input name="person" type="text" autocomplete="name" required />
+          </label>
+
+          <div class="amount-grid">
+            <label>
+              <span>薪資單：薪俸</span>
+              <input name="taxedAmount" inputmode="numeric" placeholder="例如 253000" />
+            </label>
+            <label>
+              <span>薪資單：其他加款</span>
+              <input name="untaxedAmount" inputmode="numeric" placeholder="例如 123800" />
+            </label>
+            <label>
+              <span>薪資單：所得稅</span>
+              <input name="incomeTax" inputmode="numeric" placeholder="例如 12650" />
+            </label>
+          </div>
+
+          <button type="submit">開始驗算</button>
+        </form>
+      </section>
+
+      <section id="message" class="message" hidden></section>
+      <section id="result" class="result" hidden></section>
+    </main>
+
+    <script src="./assets/client.js" type="module"></script>
+  </body>
+</html>
