@@ -1,15 +1,8 @@
-export const HOLIDAYS_115: Record<string, string> = {
-  '2026-01-01': '元旦',
-  '2026-02-16': '除夕',
-  '2026-02-17': '春節初一',
-  '2026-02-18': '春節初二',
-  '2026-02-19': '春節初三',
-  '2026-02-20': '春節初四',
-  '2026-02-21': '春節初五',
-  '2026-02-27': '和平紀念日',
-  '2026-04-03': '兒童節',
-  '2026-04-06': '清明節',
-};
+import { ALL_HOLIDAY_DATES, HOLIDAYS } from './domain-generated';
+
+// 國定假日表來自 shared/domain.json(與排班器共用同一份),
+// 經 `bun run codegen` 產生 domain-generated.ts。要增補年度假日請改那個 JSON。
+export { HOLIDAYS };
 
 export function dayOfWeek(dateStr: string): number {
   const [y, m, d] = dateStr.split('-').map(Number) as [number, number, number];
@@ -17,15 +10,17 @@ export function dayOfWeek(dateStr: string): number {
 }
 
 export function isMarkedHoliday(dateStr: string): boolean {
-  return dateStr in HOLIDAYS_115;
+  return ALL_HOLIDAY_DATES.has(dateStr);
 }
 
+/** 白班的平/假日判定:週六、週日、國定假日。 */
 export function isHoliday(dateStr: string): boolean {
   if (isMarkedHoliday(dateStr)) return true;
   const dow = dayOfWeek(dateStr);
   return dow === 0 || dow === 6;
 }
 
+/** 夜班的平/假日判定:再加上週五(週五晚視為假日夜)。 */
 export function isFriOrWeekendOrHoliday(dateStr: string): boolean {
   if (isMarkedHoliday(dateStr)) return true;
   const dow = dayOfWeek(dateStr);

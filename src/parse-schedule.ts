@@ -1,4 +1,5 @@
 import * as XLSX from 'xlsx';
+import { isMarker, splitCellCodes } from './shifts';
 import type { Shift } from './types';
 
 export interface ParsedSchedule {
@@ -9,7 +10,6 @@ export interface ParsedSchedule {
 }
 
 const TITLE_RE = /(\d{2,3})年(\d{1,2})月/;
-const OFF_CODES = new Set(['X', '*']);
 
 function pickDataSheet(wb: XLSX.WorkBook): { name: string; ws: XLSX.WorkSheet; year: number; month: number } {
   for (const name of wb.SheetNames) {
@@ -69,10 +69,16 @@ export function parseScheduleWorkbook(wb: XLSX.WorkBook, person: string): Parsed
     if (!seenDayOne) continue;
 
     const raw = row[col];
-    const code = raw === null || raw === undefined ? '' : String(raw).trim();
-    if (code === '' || OFF_CODES.has(code)) continue;
+    const cell = raw === null || raw === undefined ? '' : String(raw).trim();
+    if (cell === '') continue;
 
-    shifts.push({ date: `${year}-${pad2(month)}-${pad2(day)}`, code });
+    // 一格可能寫了多個班碼(歷史異常如 "M,20-24"),要拆開分別計時;
+    // marker(X 預假 / * 會議 / ACLS 上課)不是班,跳過。
+    const date = `${year}-${pad2(month)}-${pad2(day)}`;
+    for (const code of splitCellCodes(cell)) {
+      if (isMarker(code)) continue;
+      shifts.push({ date, code });
+    }
   }
 
   return { year, month, person, shifts };
