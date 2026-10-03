@@ -22,12 +22,22 @@ export function parseShiftCode(code: string): TimeRange {
   }
   const m = trimmed.match(/^(\d+(?:\.\d+)?)-(\d+(?:\.\d+)?)$/);
   if (m) {
-    let start = parseFloat(m[1]!);
-    let end = parseFloat(m[2]!);
+    const start = parseClock(m[1]!);
+    let end = parseClock(m[2]!);
+    if (start === null || end === null) throw new Error(`Unknown shift code: ${trimmed}`);
     if (end <= start) end += 24;
     return { start, end };
   }
   throw new Error(`Unknown shift code: ${trimmed}`);
+}
+
+/** 時刻:`8`、`16.5` 為小時;三、四位數為時分(`1630` = 16.5、`830` = 8.5,班表切半小時時的寫法)。 */
+function parseClock(token: string): number | null {
+  if (!/^\d{3,4}$/.test(token)) return parseFloat(token);
+  const hh = Number(token.slice(0, -2));
+  const mm = Number(token.slice(-2));
+  if (hh > 24 || mm >= 60) return null;
+  return hh + mm / 60;
 }
 
 /** 一格可能含多個班碼(歷史異常如 "M,20-24"),以 CELL_SEPARATORS 拆開。 */
@@ -38,6 +48,7 @@ export function splitCellCodes(cell: string): string[] {
     .filter((s) => s.length > 0);
 }
 
+/** 休假/會議/上課等非班碼格值;不分大小寫(班表上常見小寫 x)。 */
 export function isMarker(code: string): boolean {
-  return MARKER_CODES.has(code.trim());
+  return MARKER_CODES.has(code.trim().toUpperCase());
 }

@@ -1,0 +1,14 @@
+// Cloudflare Worker 只負責提供靜態網站:`bun run deploy`。
+// 網頁在瀏覽器本機解析 Excel 與計算,沒有後端,也不收任何上傳資料。
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "salary-check",
+  "compatibility_date": "2026-09-01",
+  // 每次 wrangler deploy 都先 typecheck + 重新打包 web/assets/client.js,失敗就不上線
+  "build": { "command": "bun run typecheck && bun run build:web" },
+  "assets": {
+    "directory": "./web"
+  },
+  "workers_dev": false,
+  "routes": [{ "pattern": "salary.jeekid.com", "custom_domain": true }]
+}

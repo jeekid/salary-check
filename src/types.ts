@@ -35,7 +35,10 @@ export const HOURLY_RATE: HourBreakdown = {
   單線值班: 200,
 };
 
-export const OVERTIME_CAP_HOURS = 46;
+/** 每月不扣稅(加班)時數上限:115 年 6 月以前 46 小時,7 月起 80 小時。 */
+export function overtimeCapHours(yearMonth: string): number {
+  return yearMonth >= '2026-07' ? 80 : 46;
+}
 export const INCOME_TAX_RATE = 0.05;
 
 export function emptyBreakdown(): HourBreakdown {

@@ -3,11 +3,13 @@
   "type": "module",
   "scripts": {
     "build:web": "bun build web/client.ts --outdir web/assets --target browser --format esm --entry-naming client.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "deploy": "wrangler deploy"
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wrangler": "^4"
   },
   "dependencies": {
     "xlsx": "^0.18.5"

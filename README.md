@@ -18,15 +18,17 @@ bun run build:web
 - 輸入薪資單的「薪俸 / 其他加款 / 所得稅」
 - 顯示程式計算值、薪資單值、差額、時數拆分與解析出的班表
 
-## GitHub Pages
+## 部署
 
-靜態版會在瀏覽器本機解析 Excel 與計算薪資，不需要後端 API。
+網站：<https://salary.jeekid.com>（Cloudflare Workers 靜態資產）。
+
+靜態版會在瀏覽器本機解析 Excel 與計算薪資，不需要後端 API，也不會上傳任何資料。
 
 ```sh
-bun run build:web
+bun run deploy   # wrangler deploy:先 typecheck 與打包 web/assets/client.js,再發布 web/
 ```
 
-部署使用 `.github/workflows/pages.yml`。push 到 `main` 會自動 typecheck、產生 `web/assets/client.js`，並發布 `web/`。
+設定在 `wrangler.jsonc`；`web/.assetsignore` 排除打包前的 `client.ts`。
 
 ## Notes
 

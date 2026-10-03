@@ -1,67 +1,45 @@
-import { categorizeShift } from './categorize';
+import { categorizeAll, shiftSegments, type PayCategory } from './categorize';
 import {
   emptyBreakdown,
-  OVERTIME_CAP_HOURS,
+  overtimeCapHours,
   type AllocationResult,
-  type HourBreakdown,
   type Shift,
 } from './types';
 
-interface ShiftWithBreakdown {
-  shift: Shift;
-  original: HourBreakdown;
-  remaining: HourBreakdown;
-}
+// 不扣稅(加班)時數的分配:
+//
+// 1. 可列不扣稅的時數:所有假日時數,加上「週一至週五單次上班超過 8 小時」
+//    的部分(該班第 8 小時之後的時段)。單線值班加給一律扣稅。
+// 2. 每月上限見 overtimeCapHours(46 → 80)。
+// 3. 超過上限時「以低價班時數計稅」:先保留高價類別,低價的退回扣稅。
+//    115 年 6 月以前先保留假日時數、平日超時排最後;7 月起嚴格依時薪高低。
+// 同一類別內挑哪一天不影響金額,所以只算各類別的時數。
+const PRIORITY_BEFORE_2026_07: PayCategory[] = ['假日夜', '假日白', '平日夜', '平日白'];
+const PRIORITY_FROM_2026_07: PayCategory[] = ['假日夜', '平日夜', '假日白', '平日白'];
 
 export function allocate(shifts: Shift[]): AllocationResult {
-  const items: ShiftWithBreakdown[] = shifts.map((s) => {
-    const b = categorizeShift(s);
-    return { shift: s, original: b, remaining: { ...b } };
-  });
-
-  // Latest first for allocation
-  items.sort((a, b) => b.shift.date.localeCompare(a.shift.date));
-
+  const gross = categorizeAll(shifts);
   const untaxed = emptyBreakdown();
-  let budget = OVERTIME_CAP_HOURS;
+  if (shifts.length === 0) return { taxed: gross, untaxed };
 
-  // Pass 1: 假日夜 from every shift (highest rate)
-  for (const it of items) {
-    if (budget <= 0) break;
-    const take = Math.min(it.remaining.假日夜, budget);
-    untaxed.假日夜 += take;
-    it.remaining.假日夜 -= take;
+  const yearMonth = shifts[0]!.date.slice(0, 7);
+  const candidates = emptyBreakdown();
+  for (const shift of shifts) {
+    for (const seg of shiftSegments(shift)) {
+      const isHolidayHours = seg.category === '假日白' || seg.category === '假日夜';
+      if (isHolidayHours || seg.beyondEightOnWeekday) candidates[seg.category] += seg.hours;
+    }
+  }
+
+  const priority = yearMonth >= '2026-07' ? PRIORITY_FROM_2026_07 : PRIORITY_BEFORE_2026_07;
+  let budget = overtimeCapHours(yearMonth);
+  for (const category of priority) {
+    const take = Math.min(candidates[category], budget);
+    untaxed[category] = take;
     budget -= take;
   }
 
-  // Pass 2: 假日白 from shifts that ALSO had 假日夜 (mixed shifts: E/C on holiday/Fri)
-  for (const it of items) {
-    if (budget <= 0) break;
-    if (it.original.假日夜 === 0) continue;
-    const take = Math.min(it.remaining.假日白, budget);
-    untaxed.假日白 += take;
-    it.remaining.假日白 -= take;
-    budget -= take;
-  }
-
-  // Pass 3: 假日白 from pure-day shifts (no 假日夜 portion)
-  for (const it of items) {
-    if (budget <= 0) break;
-    if (it.original.假日夜 > 0) continue;
-    const take = Math.min(it.remaining.假日白, budget);
-    untaxed.假日白 += take;
-    it.remaining.假日白 -= take;
-    budget -= take;
-  }
-
-  const taxed = emptyBreakdown();
-  for (const it of items) {
-    taxed.平日白 += it.remaining.平日白;
-    taxed.平日夜 += it.remaining.平日夜;
-    taxed.假日白 += it.remaining.假日白;
-    taxed.假日夜 += it.remaining.假日夜;
-    taxed.單線值班 += it.remaining.單線值班;
-  }
-
+  const taxed = { ...gross };
+  for (const category of priority) taxed[category] -= untaxed[category];
   return { taxed, untaxed };
 }
